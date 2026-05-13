@@ -123,7 +123,9 @@ struct ClipboardRowView: View {
             return locale.tr("type.image")
         case .file:
             let ext = item.fileURL?.pathExtension.uppercased() ?? ""
-            return ext.isEmpty ? "" : ext
+            if !ext.isEmpty { return ext }
+            if item.fileURL?.hasDirectoryPath == true { return "文件夹" }
+            return "文件"
         }
     }
 
