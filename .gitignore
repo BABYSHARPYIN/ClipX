@@ -1,0 +1,7 @@
+.build/
+build/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/
+.DS_Store
+.claude/
+.vscode/
