@@ -35,12 +35,17 @@ struct ClipboardRowView: View {
                     }
 
                     HStack(spacing: 4) {
-                        if let icon = sourceAppIcon {
-                            Image(nsImage: icon)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 12, height: 12)
+                        Group {
+                            if let icon = sourceAppIcon {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            } else {
+                                Color.clear
+                            }
                         }
+                        .frame(width: 12, height: 12)
+
                         Text(relativeTime(from: item.timestamp))
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
@@ -86,19 +91,21 @@ struct ClipboardRowView: View {
                 ImageThumbnailView(fileName: item.imageFileName)
 
             case .file:
-                if let icon = fileIcon {
-                    Image(nsImage: icon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 32, height: 32)
-                } else {
-                    Image(systemName: "doc")
-                        .font(.system(size: 16))
-                        .foregroundColor(.secondary)
-                        .frame(width: 40, height: 40)
-                        .background(Color.secondary.opacity(0.1))
-                        .cornerRadius(4)
+                Group {
+                    if let icon = fileIcon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        Image(systemName: "doc")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .frame(width: 32, height: 32)
+                .frame(width: 40, height: 40)
+                .background(Color.secondary.opacity(0.1))
+                .cornerRadius(4)
             }
         }
     }

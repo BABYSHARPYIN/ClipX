@@ -1,6 +1,10 @@
 import SwiftUI
 import AppKit
 
+extension Notification.Name {
+    static let hotkeyChanged = Notification.Name("hotkeyChanged")
+}
+
 struct HotkeySettingsView: View {
     @EnvironmentObject var locale: LocaleManager
     @State private var modifiers: [String] = []
@@ -54,6 +58,7 @@ struct HotkeySettingsView: View {
                 Button(locale.tr("hotkey.reset")) {
                     HotkeyStorage.resetToDefault()
                     loadCurrent()
+                    NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 11))
@@ -62,6 +67,7 @@ struct HotkeySettingsView: View {
                 Button(locale.tr("hotkey.clear")) {
                     HotkeyStorage.clear()
                     loadCurrent()
+                    NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 11))
@@ -106,6 +112,7 @@ struct HotkeySettingsView: View {
         keyChar = char
         keyCode = event.keyCode
         HotkeyStorage.save(keyCode: event.keyCode, char: char.first ?? "V", modifiers: mods)
+        NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
         endRecording()
     }
 

@@ -54,7 +54,6 @@ struct PopoverContentView: View {
                 ForEach(viewModel.filteredItems) { item in
                     ClipboardRowView(item: item) {
                         viewModel.copyToClipboard(item)
-                        closePopoverAfterCopy()
                     }
                     .environmentObject(viewModel)
                     .environmentObject(locale)
@@ -103,9 +102,4 @@ struct PopoverContentView: View {
         .padding(.vertical, 8)
     }
 
-    private func closePopoverAfterCopy() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            (NSApp.delegate as? AppDelegate)?.closePopover()
-        }
-    }
 }

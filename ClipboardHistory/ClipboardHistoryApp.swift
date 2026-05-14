@@ -28,6 +28,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupPopover()
         setupHotkey()
         viewModel.startMonitoring()
+
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(restartHotkey),
+            name: .hotkeyChanged, object: nil
+        )
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -107,7 +112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         if popoverVisible {
-            popover.performClose(nil)
+            popover.close()
             popoverVisible = false
         } else {
             NSApp.activate(ignoringOtherApps: true)
@@ -118,9 +123,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showPopover() {
-        // Hotkey: use cursor position
         if popoverVisible {
-            popover.performClose(nil)
+            popover.close()
             popoverVisible = false
             cursorAnchorWindow?.orderOut(nil)
             return
@@ -131,7 +135,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPopoverAtCursor() {
         let mouse = NSEvent.mouseLocation
 
-        // Try cursor position
         if NSScreen.screens.contains(where: { NSMouseInRect(mouse, $0.frame, false) }) {
             let rect = NSRect(x: mouse.x - 1, y: mouse.y - 1, width: 2, height: 2)
 
@@ -154,7 +157,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        // Fallback: menu bar
         guard let button = statusItem.button else { return }
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
@@ -164,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func closePopover() {
         if popoverVisible {
-            popover.performClose(nil)
+            popover.close()
             popoverVisible = false
         }
         cursorAnchorWindow?.orderOut(nil)
@@ -219,6 +221,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         hotkeySettingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func restartHotkey() {
+        hotkeyMonitor?.stop()
+        setupHotkey()
     }
 
     @objc private func switchLanguage(_ sender: NSMenuItem) {
