@@ -10,6 +10,7 @@ struct ClipboardRowView: View {
 
     @State private var justCopied = false
     @State private var fileIcon: NSImage?
+    @State private var sourceAppIcon: NSImage?
 
     var body: some View {
         Button {
@@ -33,9 +34,17 @@ struct ClipboardRowView: View {
                         typeBadge
                     }
 
-                    Text(relativeTime(from: item.timestamp))
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        if let icon = sourceAppIcon {
+                            Image(nsImage: icon)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 12, height: 12)
+                        }
+                        Text(relativeTime(from: item.timestamp))
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 Spacer()
@@ -54,6 +63,10 @@ struct ClipboardRowView: View {
         .onAppear {
             if item.type == .file, let url = item.fileURL {
                 fileIcon = NSWorkspace.shared.icon(forFile: url.path)
+            }
+            if let bid = item.sourceAppBundleID,
+               let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bid) {
+                sourceAppIcon = NSWorkspace.shared.icon(forFile: appURL.path)
             }
         }
     }

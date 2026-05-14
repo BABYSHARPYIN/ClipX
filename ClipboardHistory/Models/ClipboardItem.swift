@@ -13,37 +13,41 @@ struct ClipboardItem: Identifiable, Codable, Equatable {
     var imageFileName: String?
     var fileURL: URL?
     let timestamp: Date
+    var sourceAppName: String?
+    var sourceAppBundleID: String?
 
-    static func textItem(_ content: String) -> ClipboardItem {
+    static func textItem(_ content: String, source: SourceApp? = nil) -> ClipboardItem {
         ClipboardItem(
-            id: UUID(),
-            type: .text,
+            id: UUID(), type: .text,
             textContent: content,
-            imageFileName: nil,
-            fileURL: nil,
-            timestamp: Date()
+            imageFileName: nil, fileURL: nil,
+            timestamp: Date(),
+            sourceAppName: source?.name, sourceAppBundleID: source?.bundleID
         )
     }
 
-    static func imageItem(fileName: String) -> ClipboardItem {
+    static func imageItem(fileName: String, source: SourceApp? = nil) -> ClipboardItem {
         ClipboardItem(
-            id: UUID(),
-            type: .image,
+            id: UUID(), type: .image,
             textContent: nil,
-            imageFileName: fileName,
-            fileURL: nil,
-            timestamp: Date()
+            imageFileName: fileName, fileURL: nil,
+            timestamp: Date(),
+            sourceAppName: source?.name, sourceAppBundleID: source?.bundleID
         )
     }
 
-    static func fileItem(url: URL) -> ClipboardItem {
+    static func fileItem(url: URL, source: SourceApp? = nil) -> ClipboardItem {
         ClipboardItem(
-            id: UUID(),
-            type: .file,
+            id: UUID(), type: .file,
             textContent: nil,
-            imageFileName: nil,
-            fileURL: url,
-            timestamp: Date()
+            imageFileName: nil, fileURL: url,
+            timestamp: Date(),
+            sourceAppName: source?.name, sourceAppBundleID: source?.bundleID
         )
     }
+}
+
+struct SourceApp: Codable, Equatable {
+    let name: String
+    let bundleID: String
 }

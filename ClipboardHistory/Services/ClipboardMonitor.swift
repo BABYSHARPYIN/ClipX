@@ -42,42 +42,49 @@ final class ClipboardMonitor {
         guard currentChangeCount != lastChangeCount else { return }
         lastChangeCount = currentChangeCount
 
-        // 1. File URLs first — Finder copy of any file (image, video, doc, etc.)
+        let source = currentSource
+
+        // 1. File URLs first — Finder copy of any file
         if let fileURLs = pasteboard.readObjects(
             forClasses: [NSURL.self], options: [
                 .urlReadingFileURLsOnly: true
             ]
         ) as? [URL], let url = fileURLs.first {
             lastTextContent = nil
-            onNewItem(ClipboardItem.fileItem(url: url), nil)
+            onNewItem(ClipboardItem.fileItem(url: url, source: source), nil)
             return
         }
 
-        // 2. Image — screenshot or browser copy (no file URL, just image data)
+        // 2. Image — screenshot or browser copy
         if let tiffData = pasteboard.data(forType: .tiff),
            let image = NSImage(data: tiffData),
            let pngData = pngData(from: image)
         {
             lastTextContent = nil
             let fileName = UUID().uuidString + ".png"
-            onNewItem(ClipboardItem.imageItem(fileName: fileName), pngData)
+            onNewItem(ClipboardItem.imageItem(fileName: fileName, source: source), pngData)
             return
         }
 
-        // 3. Text last — only when no file URL and no image data
+        // 3. Text last
         if let text = pasteboard.string(forType: .string)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
            !text.isEmpty,
            text != lastTextContent
         {
             lastTextContent = text
-            onNewItem(ClipboardItem.textItem(text), nil)
+            onNewItem(ClipboardItem.textItem(text, source: source), nil)
             return
         }
 
         if pasteboard.string(forType: .string) == nil {
             lastTextContent = nil
         }
+    }
+
+    private var currentSource: SourceApp? {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
+        return SourceApp(name: app.localizedName ?? "Unknown", bundleID: app.bundleIdentifier ?? "")
     }
 
     private func pngData(from image: NSImage) -> Data? {
