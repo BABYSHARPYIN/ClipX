@@ -7,7 +7,8 @@ struct ClipboardHistoryApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
+            SettingsView()
+                .environmentObject(appDelegate.locale)
         }
     }
 }
@@ -42,7 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var aboutWindow: NSWindow?
     private var feedbackWindow: NSWindow?
-    private var hotkeySettingsWindow: NSWindow?
+    private var settingsWindow: NSWindow?
     private var cursorAnchorWindow: NSWindow?
 
     private var rightClickMenu: NSMenu {
@@ -60,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(langItem)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: locale.tr("app.hotkey"), action: #selector(showHotkeySettings), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: locale.tr("app.settings"), action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: locale.tr("app.about"), action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: locale.tr("app.feedback"), action: #selector(showFeedback), keyEquivalent: ""))
@@ -206,20 +207,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    @objc private func showHotkeySettings() {
-        if hotkeySettingsWindow == nil {
+    @objc private func openSettings() {
+        if settingsWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 300, height: 260),
+                contentRect: NSRect(x: 0, y: 0, width: 420, height: 280),
                 styleMask: [.titled, .closable],
                 backing: .buffered, defer: false
             )
-            window.title = "快捷键"
+            window.title = locale.tr("app.settings").replacingOccurrences(of: "...", with: "")
             window.center()
             window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: HotkeySettingsView().environmentObject(locale))
-            hotkeySettingsWindow = window
+            window.contentView = NSHostingView(rootView: SettingsView().environmentObject(locale))
+            settingsWindow = window
         }
-        hotkeySettingsWindow?.makeKeyAndOrderFront(nil)
+        settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 

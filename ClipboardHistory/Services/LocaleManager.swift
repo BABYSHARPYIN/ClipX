@@ -49,6 +49,7 @@ final class LocaleManager: ObservableObject {
         "app.feedback": "Feedback",
         "app.quit": "Quit",
         "app.hotkey": "Shortcut",
+        "app.settings": "Settings...",
         "app.language": "Language",
 
         "about.title": "ClipX",
@@ -71,6 +72,12 @@ final class LocaleManager: ObservableObject {
         "hotkey.recording": "Press shortcut...",
         "hotkey.reset": "Reset default",
         "hotkey.clear": "Clear",
+
+        "settings.general": "General",
+        "settings.hotkey": "Shortcut",
+        "settings.startup": "Startup",
+        "settings.launchAtLogin": "Launch at Login",
+        "settings.launchAtLogin.desc": "Automatically start ClipX when you log in",
 
         "search.placeholder": "Search...",
         "search.empty": "No clipboard history",
@@ -101,6 +108,7 @@ final class LocaleManager: ObservableObject {
         "app.feedback": "反馈",
         "app.quit": "退出",
         "app.hotkey": "快捷键",
+        "app.settings": "设置...",
         "app.language": "语言",
 
         "about.title": "ClipX",
@@ -123,6 +131,12 @@ final class LocaleManager: ObservableObject {
         "hotkey.recording": "按下快捷键...",
         "hotkey.reset": "恢复默认",
         "hotkey.clear": "清除",
+
+        "settings.general": "通用",
+        "settings.hotkey": "快捷键",
+        "settings.startup": "启动",
+        "settings.launchAtLogin": "开机自动启动",
+        "settings.launchAtLogin.desc": "登录时自动启动 ClipX",
 
         "search.placeholder": "搜索...",
         "search.empty": "暂无剪切板历史",
