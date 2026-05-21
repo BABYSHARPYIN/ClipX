@@ -100,6 +100,13 @@ final class LocaleManager: ObservableObject {
         "row.minAgo": "m ago",
         "row.hrAgo": "h ago",
         "row.dayAgo": "d ago",
+
+        "detail.back": "Back",
+        "detail.copyImage": "Copy Image",
+        "detail.copyText": "Copy Text",
+        "detail.ocrTitle": "Recognized Text",
+        "detail.ocrRecognizing": "Recognizing text...",
+        "detail.ocrNoText": "No text recognized in image",
     ]
 
     private let zh: [String: String] = [
@@ -159,5 +166,12 @@ final class LocaleManager: ObservableObject {
         "row.minAgo": " 分钟前",
         "row.hrAgo": " 小时前",
         "row.dayAgo": " 天前",
+
+        "detail.back": "返回",
+        "detail.copyImage": "复制图片",
+        "detail.copyText": "复制文本",
+        "detail.ocrTitle": "识别文本",
+        "detail.ocrRecognizing": "正在识别文字...",
+        "detail.ocrNoText": "图片中未识别到文字",
     ]
 }

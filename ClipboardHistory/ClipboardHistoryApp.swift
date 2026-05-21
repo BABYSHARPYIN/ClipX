@@ -116,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.close()
             popoverVisible = false
         } else {
+            notifyPopoverWillShow()
             NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
@@ -130,7 +131,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             cursorAnchorWindow?.orderOut(nil)
             return
         }
+        notifyPopoverWillShow()
         showPopoverAtCursor()
+    }
+
+    private func notifyPopoverWillShow() {
+        NotificationCenter.default.post(name: .popoverWillShow, object: nil)
     }
 
     private func showPopoverAtCursor() {
@@ -244,4 +250,8 @@ extension AppDelegate: NSPopoverDelegate {
     func popoverDidClose(_ notification: Notification) {
         popoverVisible = false
     }
+}
+
+extension Notification.Name {
+    static let popoverWillShow = Notification.Name("popoverWillShow")
 }

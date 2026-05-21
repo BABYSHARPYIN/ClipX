@@ -4,7 +4,26 @@ struct PopoverContentView: View {
     @EnvironmentObject var viewModel: ClipboardViewModel
     @EnvironmentObject var locale: LocaleManager
 
+    @State private var selectedImageItem: ClipboardItem?
+
     var body: some View {
+        Group {
+            if let imageItem = selectedImageItem {
+                ImageDetailView(item: imageItem) {
+                    selectedImageItem = nil
+                }
+                .environmentObject(locale)
+            } else {
+                mainContent
+            }
+        }
+        .frame(minWidth: 340, idealWidth: 360)
+        .onReceive(NotificationCenter.default.publisher(for: .popoverWillShow)) { _ in
+            selectedImageItem = nil
+        }
+    }
+
+    private var mainContent: some View {
         VStack(spacing: 0) {
             titleBar
             SearchBarView(searchText: $viewModel.searchText)
@@ -24,7 +43,6 @@ struct PopoverContentView: View {
 
             footBar
         }
-        .frame(minWidth: 340, idealWidth: 360)
     }
 
     private var titleBar: some View {
@@ -53,7 +71,11 @@ struct PopoverContentView: View {
             LazyVStack(spacing: 0) {
                 ForEach(viewModel.filteredItems) { item in
                     ClipboardRowView(item: item) {
-                        viewModel.copyToClipboard(item)
+                        if item.type == .image || isImageFileItem(item) {
+                            selectedImageItem = item
+                        } else {
+                            viewModel.copyToClipboard(item)
+                        }
                     }
                     .environmentObject(viewModel)
                     .environmentObject(locale)
@@ -65,6 +87,11 @@ struct PopoverContentView: View {
                 }
             }
         }
+    }
+
+    private func isImageFileItem(_ item: ClipboardItem) -> Bool {
+        guard item.type == .file, let ext = item.fileURL?.pathExtension.lowercased() else { return false }
+        return ["jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "tiff", "tif", "ico"].contains(ext)
     }
 
     private var emptyView: some View {

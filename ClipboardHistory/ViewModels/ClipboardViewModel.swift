@@ -108,9 +108,15 @@ final class ClipboardViewModel: ObservableObject {
     }
 
     private func isSameContent(_ a: ClipboardItem, _ b: ClipboardItem) -> Bool {
-        a.type == b.type
-            && a.textContent == b.textContent
-            && a.fileURL == b.fileURL
+        guard a.type == b.type else { return false }
+        switch a.type {
+        case .text:
+            return a.textContent == b.textContent
+        case .image:
+            return a.imageFileName == b.imageFileName
+        case .file:
+            return a.fileURL == b.fileURL
+        }
     }
 
     private func isDuplicate(_ item: ClipboardItem) -> Bool {
