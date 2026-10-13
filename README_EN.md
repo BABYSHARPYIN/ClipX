@@ -10,11 +10,16 @@
 
 <p align="center">
   <a href="#features">Features</a> &bull;
+  <a href="#preview">Preview</a> &bull;
   <a href="#download">Download</a> &bull;
   <a href="#build">Build</a> &bull;
   <a href="#license">License</a>
   &nbsp;|&nbsp;
   <a href="README.md">中文</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/demo.gif" alt="ClipX demo: clipboard history and image OCR speech" width="360">
 </p>
 
 ---
@@ -31,6 +36,18 @@
 - **Multi-language** — English / 中文, follows system language or manual switch
 - **OCR** — recognize text in images, copy selected results
 - **Text-to-speech** — speak clipboard text and OCR results; adjustable rate, pitch, and voice in Settings
+
+## Preview
+
+<p align="center">
+  <img src="docs/screenshots/main.png" alt="Clipboard history panel" width="280">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/ocr.png" alt="Image OCR and speak" width="280">
+</p>
+
+<p align="center">
+  <sub>Left: clipboard history (search / filter / speak)　Right: image detail (OCR text · speak / copy)</sub>
+</p>
 
 ## Download
 

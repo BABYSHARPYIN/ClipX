@@ -10,11 +10,16 @@
 
 <p align="center">
   <a href="#功能">功能</a> &bull;
+  <a href="#界面预览">界面预览</a> &bull;
   <a href="#下载">下载</a> &bull;
   <a href="#构建">构建</a> &bull;
   <a href="#许可">许可</a>
   &nbsp;|&nbsp;
   <a href="README_EN.md">English</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/demo.gif" alt="ClipX 演示：剪切板历史与图片 OCR 朗读" width="360">
 </p>
 
 ---
@@ -31,6 +36,18 @@
 - **多语言** — 中文 / English，跟随系统语言，也可手动切换
 - **OCR** — 识别图片中的文字，可复制识别结果
 - **语音朗读** — 朗读剪切板文本与 OCR 结果；设置中可调语速、语调、音色并试听
+
+## 界面预览
+
+<p align="center">
+  <img src="docs/screenshots/main.png" alt="剪切板历史列表面板" width="280">
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/ocr.png" alt="图片 OCR 识别与朗读" width="280">
+</p>
+
+<p align="center">
+  <sub>左：剪切板历史（搜索 / 分类 / 一键朗读）　右：图片详情（OCR 识别文本 · 朗读 / 复制）</sub>
+</p>
 
 ## 下载
 
