@@ -74,10 +74,24 @@ final class LocaleManager: ObservableObject {
         "hotkey.clear": "Clear",
 
         "settings.general": "General",
+        "settings.speech": "Speech",
         "settings.hotkey": "Shortcut",
         "settings.startup": "Startup",
         "settings.launchAtLogin": "Launch at Login",
         "settings.launchAtLogin.desc": "Automatically start ClipX when you log in",
+        "settings.speech.params": "Voice Parameters",
+        "settings.speech.rate": "Rate",
+        "settings.speech.pitch": "Pitch",
+        "settings.speech.voice": "Voice Style",
+        "settings.speech.voiceZh": "Chinese",
+        "settings.speech.voiceEn": "English",
+        "settings.speech.noVoice": "No voices available",
+        "settings.speech.preview": "Preview",
+        "settings.speech.previewZh": "Preview Chinese",
+        "settings.speech.previewEn": "Preview English",
+        "settings.speech.stop": "Stop",
+        "settings.speech.reset": "Reset",
+        "settings.speech.hint": "Adjust rate, pitch and voice, then preview. Settings apply to all speech.",
 
         "search.placeholder": "Search...",
         "search.empty": "No clipboard history",
@@ -104,9 +118,14 @@ final class LocaleManager: ObservableObject {
         "detail.back": "Back",
         "detail.copyImage": "Copy Image",
         "detail.copyText": "Copy Text",
+        "detail.speak": "Speak",
+        "detail.stopSpeak": "Stop",
         "detail.ocrTitle": "Recognized Text",
         "detail.ocrRecognizing": "Recognizing text...",
         "detail.ocrNoText": "No text recognized in image",
+
+        "row.speak": "Speak",
+        "row.stopSpeak": "Stop speaking",
     ]
 
     private let zh: [String: String] = [
@@ -140,10 +159,24 @@ final class LocaleManager: ObservableObject {
         "hotkey.clear": "清除",
 
         "settings.general": "通用",
+        "settings.speech": "语音",
         "settings.hotkey": "快捷键",
         "settings.startup": "启动",
         "settings.launchAtLogin": "开机自动启动",
         "settings.launchAtLogin.desc": "登录时自动启动 ClipX",
+        "settings.speech.params": "语音参数",
+        "settings.speech.rate": "语速",
+        "settings.speech.pitch": "语调",
+        "settings.speech.voice": "声音风格",
+        "settings.speech.voiceZh": "中文音色",
+        "settings.speech.voiceEn": "英文音色",
+        "settings.speech.noVoice": "系统暂无可用音色",
+        "settings.speech.preview": "试听",
+        "settings.speech.previewZh": "试听中文",
+        "settings.speech.previewEn": "试听英文",
+        "settings.speech.stop": "停止",
+        "settings.speech.reset": "恢复默认",
+        "settings.speech.hint": "调整语速、语调和音色后可试听，设置会应用到所有朗读。",
 
         "search.placeholder": "搜索...",
         "search.empty": "暂无剪切板历史",
@@ -170,8 +203,13 @@ final class LocaleManager: ObservableObject {
         "detail.back": "返回",
         "detail.copyImage": "复制图片",
         "detail.copyText": "复制文本",
+        "detail.speak": "朗读",
+        "detail.stopSpeak": "停止",
         "detail.ocrTitle": "识别文本",
         "detail.ocrRecognizing": "正在识别文字...",
         "detail.ocrNoText": "图片中未识别到文字",
+
+        "row.speak": "朗读",
+        "row.stopSpeak": "停止朗读",
     ]
 }

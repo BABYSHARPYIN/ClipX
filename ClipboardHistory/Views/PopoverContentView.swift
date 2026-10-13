@@ -20,6 +20,10 @@ struct PopoverContentView: View {
         .frame(minWidth: 340, idealWidth: 360)
         .onReceive(NotificationCenter.default.publisher(for: .popoverWillShow)) { _ in
             selectedImageItem = nil
+            TTSService.shared.stop()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .popoverDidClose)) { _ in
+            TTSService.shared.stop()
         }
     }
 

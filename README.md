@@ -27,6 +27,8 @@
 - **Cursor positioning** — popover appears right at your mouse cursor
 - **200-item history** — persisted across restarts
 - **Multi-language** — English / 中文, follows system language or manual switch
+- **OCR** — recognize text in images, copy selected results
+- **Text-to-speech** — speak clipboard text and OCR results; adjustable rate, pitch, and voice in Settings
 
 ## Download
 

@@ -4,6 +4,7 @@ import AppKit
 struct ClipboardRowView: View {
     @EnvironmentObject var viewModel: ClipboardViewModel
     @EnvironmentObject var locale: LocaleManager
+    @ObservedObject private var tts = TTSService.shared
 
     let item: ClipboardItem
     let onCopy: () -> Void
@@ -13,58 +14,74 @@ struct ClipboardRowView: View {
     @State private var sourceAppIcon: NSImage?
 
     var body: some View {
-        Button {
-            onCopy()
-            justCopied = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                justCopied = false
-            }
-        } label: {
-            HStack(spacing: 10) {
-                typeIcon
+        HStack(spacing: 6) {
+            Button {
+                onCopy()
+                justCopied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    justCopied = false
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    typeIcon
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 4) {
-                        itemTitle
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .font(.system(size: 13))
-                            .foregroundColor(.primary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 4) {
+                            itemTitle
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .font(.system(size: 13))
+                                .foregroundColor(.primary)
 
-                        typeBadge
-                    }
-
-                    HStack(spacing: 4) {
-                        Group {
-                            if let icon = sourceAppIcon {
-                                Image(nsImage: icon)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                            } else {
-                                Color.clear
-                            }
+                            typeBadge
                         }
-                        .frame(width: 12, height: 12)
 
-                        Text(relativeTime(from: item.timestamp))
+                        HStack(spacing: 4) {
+                            Group {
+                                if let icon = sourceAppIcon {
+                                    Image(nsImage: icon)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                } else {
+                                    Color.clear
+                                }
+                            }
+                            .frame(width: 12, height: 12)
+
+                            Text(relativeTime(from: item.timestamp))
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if justCopied {
+                        Text(locale.tr("row.copied"))
                             .font(.system(size: 10))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.accentColor)
                     }
                 }
-
-                Spacer()
-
-                if justCopied {
-                    Text(locale.tr("row.copied"))
-                        .font(.system(size: 10))
-                        .foregroundColor(.accentColor)
-                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .help(itemFullText)
+
+            if let text = speakableText {
+                Button {
+                    tts.toggle(text)
+                } label: {
+                    Image(systemName: tts.isSpeaking(text) ? "stop.fill" : "speaker.wave.2.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(tts.isSpeaking(text) ? .accentColor : .secondary)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(tts.isSpeaking(text) ? locale.tr("row.stopSpeak") : locale.tr("row.speak"))
+            }
         }
-        .buttonStyle(.plain)
-        .help(itemFullText)
         .onAppear {
             if item.type == .file, let url = item.fileURL {
                 fileIcon = NSWorkspace.shared.icon(forFile: url.path)
@@ -74,6 +91,14 @@ struct ClipboardRowView: View {
                 sourceAppIcon = NSWorkspace.shared.icon(forFile: appURL.path)
             }
         }
+    }
+
+    private var speakableText: String? {
+        guard item.type == .text,
+              let text = item.textContent?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty
+        else { return nil }
+        return text
     }
 
     private var typeIcon: some View {

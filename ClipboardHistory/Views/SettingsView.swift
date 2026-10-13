@@ -4,6 +4,7 @@ import ServiceManagement
 
 struct SettingsView: View {
     @EnvironmentObject var locale: LocaleManager
+    @ObservedObject private var tts = TTSService.shared
 
     // Hotkey state
     @State private var modifiers: [String] = []
@@ -18,83 +19,214 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            Form {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
-                            ForEach(modifiers, id: \.self) { m in
-                                Text(m)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.accentColor.opacity(0.15))
-                                    .cornerRadius(4)
-                            }
+            generalTab
+                .tabItem {
+                    Label(locale.tr("settings.general"), systemImage: "gear")
+                }
 
-                            Text(keyChar.isEmpty ? "?" : keyChar)
-                                .font(.system(size: 13, weight: .bold))
-                                .padding(.horizontal, 10)
+            speechTab
+                .tabItem {
+                    Label(locale.tr("settings.speech"), systemImage: "speaker.wave.2")
+                }
+        }
+        .frame(width: 440, height: 360)
+        .onAppear { loadCurrentHotkey() }
+        .onDisappear {
+            endRecording()
+            tts.stop()
+        }
+    }
+
+    // MARK: - General
+
+    private var generalTab: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        ForEach(modifiers, id: \.self) { m in
+                            Text(m)
+                                .font(.system(size: 13, weight: .medium))
+                                .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(isRecording ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.15))
+                                .background(Color.accentColor.opacity(0.15))
                                 .cornerRadius(4)
                         }
 
-                        HStack(spacing: 8) {
-                            Button(isRecording ? locale.tr("hotkey.recording") : locale.tr("hotkey.record")) {
-                                startRecording()
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.small)
-                            .disabled(isRecording)
+                        Text(keyChar.isEmpty ? "?" : keyChar)
+                            .font(.system(size: 13, weight: .bold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(isRecording ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.15))
+                            .cornerRadius(4)
+                    }
 
-                            Button(locale.tr("hotkey.reset")) {
-                                HotkeyStorage.resetToDefault()
-                                loadCurrentHotkey()
-                                NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
-                            }
-                            .buttonStyle(.borderless)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-
-                            Button(locale.tr("hotkey.clear")) {
-                                HotkeyStorage.clear()
-                                loadCurrentHotkey()
-                                NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
-                            }
-                            .buttonStyle(.borderless)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
+                    HStack(spacing: 8) {
+                        Button(isRecording ? locale.tr("hotkey.recording") : locale.tr("hotkey.record")) {
+                            startRecording()
                         }
-                    }
-                    .padding(.vertical, 4)
-                } header: {
-                    Text(locale.tr("settings.hotkey"))
-                }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .disabled(isRecording)
 
-                Section {
-                    Toggle(isOn: $launchAtLogin) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(locale.tr("settings.launchAtLogin"))
-                            Text(locale.tr("settings.launchAtLogin.desc"))
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
+                        Button(locale.tr("hotkey.reset")) {
+                            HotkeyStorage.resetToDefault()
+                            loadCurrentHotkey()
+                            NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
                         }
+                        .buttonStyle(.borderless)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+
+                        Button(locale.tr("hotkey.clear")) {
+                            HotkeyStorage.clear()
+                            loadCurrentHotkey()
+                            NotificationCenter.default.post(name: .hotkeyChanged, object: nil)
+                        }
+                        .buttonStyle(.borderless)
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
                     }
-                    .onChange(of: launchAtLogin) { _, newValue in
-                        setLaunchAtLogin(newValue)
-                    }
-                } header: {
-                    Text(locale.tr("settings.startup"))
                 }
+                .padding(.vertical, 4)
+            } header: {
+                Text(locale.tr("settings.hotkey"))
             }
-            .formStyle(.grouped)
-            .tabItem {
-                Label(locale.tr("settings.general"), systemImage: "gear")
+
+            Section {
+                Toggle(isOn: $launchAtLogin) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(locale.tr("settings.launchAtLogin"))
+                        Text(locale.tr("settings.launchAtLogin.desc"))
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .onChange(of: launchAtLogin) { _, newValue in
+                    setLaunchAtLogin(newValue)
+                }
+            } header: {
+                Text(locale.tr("settings.startup"))
             }
         }
-        .frame(width: 420, height: 260)
-        .onAppear { loadCurrentHotkey() }
-        .onDisappear { endRecording() }
+        .formStyle(.grouped)
+    }
+
+    // MARK: - Speech
+
+    private var speechTab: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(locale.tr("settings.speech.rate"))
+                        Spacer()
+                        Text(rateLabel)
+                            .foregroundColor(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(value: $tts.rate, in: TTSService.rateRange)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(locale.tr("settings.speech.pitch"))
+                        Spacer()
+                        Text(pitchLabel)
+                            .foregroundColor(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(value: $tts.pitch, in: TTSService.pitchRange)
+                }
+            } header: {
+                Text(locale.tr("settings.speech.params"))
+            }
+
+            Section {
+                if tts.chineseVoices.isEmpty {
+                    Text(locale.tr("settings.speech.noVoice"))
+                        .foregroundColor(.secondary)
+                } else {
+                    Picker(locale.tr("settings.speech.voiceZh"), selection: $tts.voiceIdentifierZh) {
+                        ForEach(tts.chineseVoices) { voice in
+                            Text(voice.displayName).tag(voice.id)
+                        }
+                    }
+                }
+
+                if tts.englishVoices.isEmpty {
+                    Text(locale.tr("settings.speech.noVoice"))
+                        .foregroundColor(.secondary)
+                } else {
+                    Picker(locale.tr("settings.speech.voiceEn"), selection: $tts.voiceIdentifierEn) {
+                        ForEach(tts.englishVoices) { voice in
+                            Text(voice.displayName).tag(voice.id)
+                        }
+                    }
+                }
+            } header: {
+                Text(locale.tr("settings.speech.voice"))
+            }
+
+            Section {
+                HStack(spacing: 10) {
+                    Button {
+                        if tts.isSpeaking {
+                            tts.stop()
+                        } else {
+                            tts.preview(preferChinese: true)
+                        }
+                    } label: {
+                        Label(
+                            tts.isSpeaking ? locale.tr("settings.speech.stop") : locale.tr("settings.speech.previewZh"),
+                            systemImage: tts.isSpeaking ? "stop.fill" : "speaker.wave.2.fill"
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+
+                    Button {
+                        if tts.isSpeaking {
+                            tts.stop()
+                        } else {
+                            tts.preview(preferChinese: false)
+                        }
+                    } label: {
+                        Label(
+                            tts.isSpeaking ? locale.tr("settings.speech.stop") : locale.tr("settings.speech.previewEn"),
+                            systemImage: tts.isSpeaking ? "stop.fill" : "speaker.wave.2"
+                        )
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Spacer()
+
+                    Button(locale.tr("settings.speech.reset")) {
+                        tts.resetToDefaults()
+                        tts.stop()
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                }
+            } header: {
+                Text(locale.tr("settings.speech.preview"))
+            } footer: {
+                Text(locale.tr("settings.speech.hint"))
+                    .font(.system(size: 11))
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var rateLabel: String {
+        let percent = Int((tts.rate / TTSService.defaultRate) * 100)
+        return "\(percent)%"
+    }
+
+    private var pitchLabel: String {
+        String(format: "%.1fx", tts.pitch)
     }
 
     // MARK: - Hotkey

@@ -7,9 +7,9 @@
 	<key>CFBundleName</key>
 	<string>ClipX</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2</string>
+	<string>1.4</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>4</string>
 	<key>LSUIElement</key>
 	<true/>
 </dict>

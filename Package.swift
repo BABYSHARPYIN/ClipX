@@ -9,13 +9,15 @@ let package = Package(
         .executableTarget(
             name: "ClipboardHistory",
             path: "ClipboardHistory",
+            exclude: ["Info.plist"],
             resources: [
                 .process("Assets.xcassets")
             ],
             linkerSettings: [
                 .linkedFramework("ApplicationServices"),
                 .linkedFramework("Carbon"),
-                .linkedFramework("ServiceManagement")
+                .linkedFramework("ServiceManagement"),
+                .linkedFramework("AVFoundation")
             ]
         )
     ]

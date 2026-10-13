@@ -3,6 +3,7 @@ import AppKit
 
 struct ImageDetailView: View {
     @EnvironmentObject var locale: LocaleManager
+    @ObservedObject private var tts = TTSService.shared
 
     let item: ClipboardItem
     let onBack: () -> Void
@@ -21,6 +22,7 @@ struct ImageDetailView: View {
             content
         }
         .onAppear(perform: startOCR)
+        .onDisappear { tts.stop() }
     }
 
     // MARK: - Header
@@ -129,7 +131,7 @@ struct ImageDetailView: View {
                     .padding(.vertical, 20)
             } else if let text = ocrText {
                 textEditor(for: text)
-                copyTextButton
+                actionButtons
             } else {
                 Text(locale.tr("detail.ocrNoText"))
                     .font(.system(size: 12))
@@ -150,6 +152,33 @@ struct ImageDetailView: View {
             .padding(.horizontal, 10)
     }
 
+    private var actionButtons: some View {
+        HStack(spacing: 10) {
+            speakButton
+            copyTextButton
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private var speakButton: some View {
+        let speaking = ocrText.map { tts.isSpeaking($0) } ?? false
+        return Button {
+            guard let text = ocrText, !text.isEmpty else { return }
+            tts.toggle(text)
+        } label: {
+            Label(
+                speaking ? locale.tr("detail.stopSpeak") : locale.tr("detail.speak"),
+                systemImage: speaking ? "stop.fill" : "speaker.wave.2.fill"
+            )
+            .font(.system(size: 12))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .disabled(ocrText == nil || ocrText!.isEmpty)
+    }
+
     private var copyTextButton: some View {
         Button {
             NSPasteboard.general.clearContents()
@@ -162,7 +191,6 @@ struct ImageDetailView: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.small)
-        .padding(.horizontal, 20)
         .disabled(ocrText == nil || ocrText!.isEmpty)
     }
 

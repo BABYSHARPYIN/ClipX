@@ -216,7 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openSettings() {
         if settingsWindow == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 420, height: 280),
+                contentRect: NSRect(x: 0, y: 0, width: 440, height: 400),
                 styleMask: [.titled, .closable],
                 backing: .buffered, defer: false
             )
@@ -225,6 +225,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: SettingsView().environmentObject(locale))
             settingsWindow = window
+        } else {
+            settingsWindow?.setContentSize(NSSize(width: 440, height: 400))
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -249,9 +251,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: NSPopoverDelegate {
     func popoverDidClose(_ notification: Notification) {
         popoverVisible = false
+        NotificationCenter.default.post(name: .popoverDidClose, object: nil)
     }
 }
 
 extension Notification.Name {
     static let popoverWillShow = Notification.Name("popoverWillShow")
+    static let popoverDidClose = Notification.Name("popoverDidClose")
 }
