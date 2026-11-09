@@ -11,6 +11,7 @@ struct ImageDetailView: View {
     @State private var ocrText: String?
     @State private var isRecognizing = false
     @State private var errorMessage: String?
+    @State private var didCopyImage = false
 
     private let storage = StorageManager()
     private let ocr = OCRService.shared
@@ -44,7 +45,7 @@ struct ImageDetailView: View {
             Button {
                 copyImage()
             } label: {
-                Image(systemName: "doc.on.doc")
+                Image(systemName: didCopyImage ? "checkmark" : "doc.on.doc")
                     .font(.system(size: 11))
                 Text(locale.tr("detail.copyImage"))
                     .font(.system(size: 11))
@@ -232,10 +233,15 @@ struct ImageDetailView: View {
 
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setData(tiffData, forType: .tiff)
+        guard pasteboard.setData(tiffData, forType: .tiff) else { return }
         if let pngRep = NSBitmapImageRep(data: tiffData),
            let pngData = pngRep.representation(using: .png, properties: [:]) {
             pasteboard.setData(pngData, forType: .png)
+        }
+
+        didCopyImage = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            didCopyImage = false
         }
     }
 }
