@@ -40,11 +40,16 @@ class StorageManager {
         else {
             return []
         }
-        return items
+        let capped = ClipboardItem.applyingPinLimit(items)
+        if capped != items, let encoded = try? JSONEncoder().encode(capped) {
+            try? encoded.write(to: itemsURL, options: .atomic)
+        }
+        return capped
     }
 
     func saveItems(_ items: [ClipboardItem]) {
-        let trimmed = ClipboardItem.applyingRetentionLimit(items, maxCount: maxItemCount)
+        let capped = ClipboardItem.applyingPinLimit(items)
+        let trimmed = ClipboardItem.applyingRetentionLimit(capped, maxCount: maxItemCount)
         guard let data = try? JSONEncoder().encode(trimmed) else { return }
         do {
             try data.write(to: itemsURL, options: .atomic)

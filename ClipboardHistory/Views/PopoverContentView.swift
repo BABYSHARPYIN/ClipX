@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct PopoverContentView: View {
     @EnvironmentObject var viewModel: ClipboardViewModel
@@ -42,7 +43,7 @@ struct PopoverContentView: View {
             if viewModel.filteredItems.isEmpty {
                 emptyView
             } else {
-                itemList
+                listSection
             }
 
             footBar
@@ -70,27 +71,90 @@ struct PopoverContentView: View {
         .labelsHidden()
     }
 
+    private var pinnedItems: [ClipboardItem] {
+        viewModel.filteredItems.filter(\.isPinned)
+    }
+
+    private var scrollItems: [ClipboardItem] {
+        viewModel.filteredItems.filter { !$0.isPinned }
+    }
+
+    private var listSection: some View {
+        VStack(spacing: 0) {
+            if viewModel.showsPinLimitNotice {
+                Text(locale.tr("pin.limit"))
+                    .font(.system(size: 11))
+                    .foregroundColor(.accentColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 6)
+                    .transition(.opacity)
+            }
+            itemList
+        }
+        .animation(.easeInOut(duration: 0.15), value: viewModel.showsPinLimitNotice)
+    }
+
     private var itemList: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(viewModel.filteredItems) { item in
-                    ClipboardRowView(item: item) {
-                        if item.type == .image || isImageFileItem(item) {
-                            selectedImageItem = item
-                        } else {
-                            viewModel.copyToClipboard(item)
-                        }
-                    }
-                    .environmentObject(viewModel)
-                    .environmentObject(locale)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 2)
-
-                    Divider()
-                        .padding(.leading, 50)
+            if scrollItems.isEmpty {
+                Color.clear.frame(height: 1)
+            } else {
+                LazyVStack(spacing: 0) {
+                    historyRows(scrollItems, showsTrailingDivider: true)
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !pinnedItems.isEmpty {
+                pinnedLayer
+            }
+        }
+    }
+
+    /// Pinned rows stay fixed above the scrolling history and content moves underneath.
+    private var pinnedLayer: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                historyRows(pinnedItems, showsTrailingDivider: false)
+            }
+            .background(Color(nsColor: .windowBackgroundColor))
+            Divider()
+            LinearGradient(
+                colors: [Color.primary.opacity(0.10), Color.primary.opacity(0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 8)
+            .allowsHitTesting(false)
+        }
+        .zIndex(1)
+    }
+
+    @ViewBuilder
+    private func historyRows(_ items: [ClipboardItem], showsTrailingDivider: Bool) -> some View {
+        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+            row(for: item)
+            if showsTrailingDivider || index < items.count - 1 {
+                Divider()
+                    .padding(.leading, 50)
+            }
+        }
+    }
+
+    private func row(for item: ClipboardItem) -> some View {
+        ClipboardRowView(item: item) {
+            if item.type == .image || isImageFileItem(item) {
+                selectedImageItem = item
+            } else {
+                viewModel.copyToClipboard(item)
+            }
+        }
+        .environmentObject(viewModel)
+        .environmentObject(locale)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 2)
     }
 
     private func isImageFileItem(_ item: ClipboardItem) -> Bool {

@@ -12,9 +12,14 @@ struct ClipboardRowView: View {
     @State private var justCopied = false
     @State private var fileIcon: NSImage?
     @State private var sourceAppIcon: NSImage?
+    @State private var translationVisible = false
+    @State private var translationWorking = false
+    @State private var translationResult: String?
+    @State private var translationFailed = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
             Button {
                 onCopy()
                 justCopied = true
@@ -74,13 +79,22 @@ struct ClipboardRowView: View {
                 Image(systemName: item.isPinned ? "pin.fill" : "pin")
                     .font(.system(size: 11))
                     .foregroundColor(item.isPinned ? .accentColor : .secondary)
+                    .opacity(pinLimitReached ? 0.45 : 1)
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(locale.tr(item.isPinned ? "row.unpin" : "row.pin"))
+            .help(pinHelp)
 
             if let text = speakableText {
+                ClipboardTranslateButton(
+                    text: text,
+                    isVisible: $translationVisible,
+                    isWorking: $translationWorking,
+                    result: $translationResult,
+                    failed: $translationFailed
+                )
+
                 Button {
                     tts.toggle(text)
                 } label: {
@@ -93,7 +107,13 @@ struct ClipboardRowView: View {
                 .buttonStyle(.plain)
                 .help(tts.isSpeaking(text) ? locale.tr("row.stopSpeak") : locale.tr("row.speak"))
             }
+            }
+
+            if translationVisible, speakableText != nil {
+                translationReveal
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             if item.type == .file, let url = item.fileURL {
                 fileIcon = NSWorkspace.shared.icon(forFile: url.path)
@@ -103,6 +123,45 @@ struct ClipboardRowView: View {
                 sourceAppIcon = NSWorkspace.shared.icon(forFile: appURL.path)
             }
         }
+    }
+
+    private var pinLimitReached: Bool {
+        !item.isPinned && viewModel.items.filter(\.isPinned).count >= ClipboardItem.maxPinnedCount
+    }
+
+    private var pinHelp: String {
+        if item.isPinned { return locale.tr("row.unpin") }
+        if pinLimitReached { return locale.tr("pin.limit") }
+        return locale.tr("row.pin")
+    }
+
+    @ViewBuilder
+    private var translationReveal: some View {
+        Group {
+            if translationWorking && translationResult == nil {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(locale.tr("row.translating"))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+            } else if translationFailed {
+                Text(locale.tr("row.translateFailed"))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            } else if let translationResult {
+                Text(translationResult)
+                    .font(.system(size: 12))
+                    .foregroundColor(.primary)
+                    .lineLimit(8)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.leading, 50)
+        .padding(.trailing, 8)
+        .padding(.bottom, 4)
     }
 
     private var speakableText: String? {

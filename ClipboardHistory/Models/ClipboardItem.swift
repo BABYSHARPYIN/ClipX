@@ -87,10 +87,60 @@ struct ClipboardItem: Identifiable, Codable, Equatable {
         return merged
     }
 
+    /// At most this many items stay pinned. Older pins are released, not deleted.
+    static let maxPinnedCount = 3
+
     /// Newest pinned items first, then the remaining history newest first.
     static func displayOrder(_ items: [ClipboardItem]) -> [ClipboardItem] {
         let newestFirst = Array(items.reversed())
         return newestFirst.filter(\.isPinned) + newestFirst.filter { !$0.isPinned }
+    }
+
+    /// Keeps the pins that already lead the list, up to `maxPins`.
+    /// Released pins stay in history and become unpinned. Stored order is unchanged.
+    static func applyingPinLimit(_ items: [ClipboardItem], maxPins: Int = maxPinnedCount) -> [ClipboardItem] {
+        guard maxPins >= 0 else { return items }
+        var allowed = Set<UUID>()
+        allowed.reserveCapacity(min(maxPins, items.count))
+        for item in items.reversed() where item.isPinned {
+            if allowed.count == maxPins { break }
+            allowed.insert(item.id)
+        }
+        let pinnedCount = items.reduce(into: 0) { count, item in
+            if item.isPinned { count += 1 }
+        }
+        guard pinnedCount > allowed.count else { return items }
+        return items.map { item in
+            guard item.isPinned, !allowed.contains(item.id) else { return item }
+            var released = item
+            released.isPinned = false
+            return released
+        }
+    }
+
+    /// Pins or unpins one item. Pinning is rejected once `maxPins` items are already pinned.
+    static func togglingPin(
+        id: UUID,
+        in items: [ClipboardItem],
+        maxPins: Int = maxPinnedCount
+    ) -> PinToggleOutcome {
+        guard let index = items.firstIndex(where: { $0.id == id }) else {
+            return .changed(items)
+        }
+        if items[index].isPinned {
+            var next = items
+            next[index].isPinned = false
+            return .changed(next)
+        }
+        let pinnedCount = items.reduce(into: 0) { count, item in
+            if item.isPinned { count += 1 }
+        }
+        if pinnedCount >= maxPins {
+            return .rejectedAtLimit
+        }
+        var next = items
+        next[index].isPinned = true
+        return .changed(next)
     }
 
     /// Drops the oldest unpinned items once `items` is past `maxCount`. Pinned items stay.
@@ -126,6 +176,11 @@ extension ClipboardItem {
             isPinned: try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
         )
     }
+}
+
+enum PinToggleOutcome: Equatable {
+    case changed([ClipboardItem])
+    case rejectedAtLimit
 }
 
 struct SourceApp: Codable, Equatable {

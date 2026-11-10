@@ -108,7 +108,7 @@ final class LocaleManager: ObservableObject {
 
         "footer.items": " records",
         "footer.clearAll": "Clear All",
-        "footer.clearAll.help": "Pinned items are kept",
+        "footer.clearAll.help": "Pinned items are kept (up to 3)",
 
         "row.copied": "Copied",
         "row.justNow": "just now",
@@ -129,6 +129,10 @@ final class LocaleManager: ObservableObject {
         "row.stopSpeak": "Stop speaking",
         "row.pin": "Pin",
         "row.unpin": "Unpin",
+        "pin.limit": "You can pin up to 3 items",
+        "row.translate": "Translate",
+        "row.translating": "Translating...",
+        "row.translateFailed": "Couldn't translate",
     ]
 
     private let zh: [String: String] = [
@@ -196,7 +200,7 @@ final class LocaleManager: ObservableObject {
 
         "footer.items": " 条记录",
         "footer.clearAll": "清除全部",
-        "footer.clearAll.help": "置顶条目会保留",
+        "footer.clearAll.help": "置顶条目会保留（最多 3 条）",
 
         "row.copied": "已复制",
         "row.justNow": "刚刚",
@@ -217,5 +221,9 @@ final class LocaleManager: ObservableObject {
         "row.stopSpeak": "停止朗读",
         "row.pin": "置顶",
         "row.unpin": "取消置顶",
+        "pin.limit": "最多置顶 3 条",
+        "row.translate": "翻译",
+        "row.translating": "正在翻译...",
+        "row.translateFailed": "无法翻译",
     ]
 }

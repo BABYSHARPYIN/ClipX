@@ -27,6 +27,12 @@ func runPinRetentionChecks() throws {
     try checkDisplayOrderLeadsWithNewestPins()
     try checkRecopyInheritsPinWithoutChangingOtherContent()
     try checkReuseKeepsPinAndSource()
+    try checkPinLimitKeepsTheThreeLeadingPins()
+    try checkFourthPinIsRejectedUntilOneIsUnpinned()
+    try checkSaveEnforcesPinCapWithoutDroppingItems()
+    try checkStoredHistoryOverPinLimitIsReducedOnLoad()
+    try checkClearAfterPinCapKeepsOnlyTheRemainingPins()
+    try checkPinCapThenRetentionStillKeepsRemainingPins()
 }
 
 func checkLegacyJSONDefaultsToUnpinned() throws {
@@ -241,6 +247,145 @@ func checkReuseKeepsPinAndSource() throws {
     try expect(copy.sourceAppBundleID == source.bundleID, "reusing an item keeps the source id")
     try expect(copy.timestamp == later, "reusing an item refreshes the timestamp")
     try expect(copy.textContent == item.textContent, "reusing an item keeps its text")
+}
+
+func checkPinLimitKeepsTheThreeLeadingPins() throws {
+    let items = [
+        pinned("p-old", fileName: nil),
+        pinned("p2", fileName: nil),
+        pinned("p3", fileName: nil),
+        pinned("p-new", fileName: nil)
+    ]
+    let capped = ClipboardItem.applyingPinLimit(items)
+    try expect(capped.map(\.id) == items.map(\.id), "pin cap keeps every item in place")
+    try expect(capped.map(\.textContent) == items.map(\.textContent), "pin cap keeps item contents")
+    try expect(capped.map(\.isPinned) == [false, true, true, true], "only the oldest stored pin is released")
+    let shown = ClipboardItem.displayOrder(capped).filter(\.isPinned).map(\.textContent)
+    try expect(shown == ["p-new", "p3", "p2"], "the pins that lead the list stay pinned")
+
+    let three = Array(items.dropFirst())
+    let unchanged = ClipboardItem.applyingPinLimit(three)
+    try expect(unchanged.map(\.isPinned) == [true, true, true], "three pins are left unchanged")
+    try expect(ClipboardItem.maxPinnedCount == 3, "the pin cap is three")
+
+    let mixed = [
+        named("u-old"),
+        pinned("p-old", fileName: nil),
+        named("u-new"),
+        pinned("p2", fileName: nil),
+        pinned("p3", fileName: nil),
+        pinned("p-new", fileName: nil)
+    ]
+    let mixedCapped = ClipboardItem.applyingPinLimit(mixed)
+    try expect(
+        mixedCapped.map(\.isPinned) == [false, false, false, true, true, true],
+        "unpinned history stays unpinned while the leading pins stay"
+    )
+    try expect(mixedCapped.map(\.id) == mixed.map(\.id), "a mixed history keeps its stored order")
+}
+
+func checkFourthPinIsRejectedUntilOneIsUnpinned() throws {
+    let first = pinned("p1", fileName: nil)
+    let second = pinned("p2", fileName: nil)
+    let third = pinned("p3", fileName: nil)
+    let extra = named("extra")
+    let items = [first, second, third, extra]
+
+    guard case .rejectedAtLimit = ClipboardItem.togglingPin(id: extra.id, in: items) else {
+        throw PinCheckFailure(description: "a fourth pin is rejected")
+    }
+    try expect(
+        items.map(\.isPinned) == [true, true, true, false],
+        "rejection leaves the existing pins unchanged"
+    )
+
+    guard case .changed(let unpinned) = ClipboardItem.togglingPin(id: first.id, in: items) else {
+        throw PinCheckFailure(description: "unpinning should succeed")
+    }
+    try expect(unpinned.first(where: { $0.id == first.id })?.isPinned == false, "unpin clears that item")
+    try expect(unpinned.filter(\.isPinned).count == 2, "unpin frees a pin slot")
+
+    guard case .changed(let pinnedAgain) = ClipboardItem.togglingPin(id: extra.id, in: unpinned) else {
+        throw PinCheckFailure(description: "pinning succeeds after a slot frees")
+    }
+    try expect(pinnedAgain.first(where: { $0.id == extra.id })?.isPinned == true, "the newly pinned item is pinned")
+    try expect(pinnedAgain.filter(\.isPinned).count == ClipboardItem.maxPinnedCount, "pinning stops at three")
+
+    guard case .rejectedAtLimit = ClipboardItem.togglingPin(id: first.id, in: pinnedAgain) else {
+        throw PinCheckFailure(description: "the freed item cannot be pinned again while three are pinned")
+    }
+}
+
+func checkSaveEnforcesPinCapWithoutDroppingItems() throws {
+    try withTempStore(maxItemCount: 20) { storage, directory in
+        let items = [
+            pinned("p-old", fileName: nil),
+            pinned("p2", fileName: nil),
+            pinned("p3", fileName: nil),
+            pinned("p-new", fileName: nil)
+        ]
+        storage.saveItems(items)
+        let loaded = StorageManager(baseURL: directory, maxItemCount: 20).loadItems()
+        try expect(loaded.count == 4, "pin cap does not delete items under the retention limit")
+        try expect(loaded.map(\.isPinned) == [false, true, true, true], "save keeps the three newest stored pins")
+        try expect(loaded.map(\.id) == items.map(\.id), "save keeps the original items")
+    }
+}
+
+func checkStoredHistoryOverPinLimitIsReducedOnLoad() throws {
+    try withTempStore(maxItemCount: 20) { storage, directory in
+        let items = [
+            pinned("p-old", fileName: nil),
+            pinned("p2", fileName: nil),
+            pinned("p3", fileName: nil),
+            pinned("p-new", fileName: nil)
+        ]
+        let url = directory.appendingPathComponent("items.json")
+        try JSONEncoder().encode(items).write(to: url)
+
+        let loaded = storage.loadItems()
+        try expect(loaded.count == 4, "over-cap pins stay in history")
+        try expect(loaded.map(\.isPinned) == [false, true, true, true], "load keeps the three newest stored pins")
+        try expect(loaded.map(\.textContent) == items.map(\.textContent), "load does not reorder history")
+
+        let persisted = StorageManager(baseURL: directory, maxItemCount: 20).loadItems()
+        try expect(persisted.map(\.isPinned) == loaded.map(\.isPinned), "reduced pins are written back")
+        try expect(persisted.map(\.id) == loaded.map(\.id), "a second load keeps the same items")
+    }
+}
+
+func checkClearAfterPinCapKeepsOnlyTheRemainingPins() throws {
+    try withTempStore(maxItemCount: 20) { storage, directory in
+        let items = [
+            pinned("p-old", fileName: nil),
+            named("loose"),
+            pinned("p2", fileName: nil),
+            pinned("p3", fileName: nil),
+            pinned("p-new", fileName: nil)
+        ]
+        let url = directory.appendingPathComponent("items.json")
+        try JSONEncoder().encode(items).write(to: url)
+
+        storage.clearAll()
+        let loaded = storage.loadItems()
+        try expect(loaded.map(\.textContent) == ["p2", "p3", "p-new"], "clear keeps the three pins that remain after the cap")
+        try expect(loaded.allSatisfy(\.isPinned), "everything left after clear is pinned")
+    }
+}
+
+func checkPinCapThenRetentionStillKeepsRemainingPins() throws {
+    try withTempStore(maxItemCount: 2) { storage, _ in
+        let items = [
+            pinned("p-old", fileName: nil),
+            pinned("p2", fileName: nil),
+            pinned("p3", fileName: nil),
+            pinned("p-new", fileName: nil)
+        ]
+        storage.saveItems(items)
+        let loaded = storage.loadItems()
+        try expect(loaded.map(\.textContent) == ["p2", "p3", "p-new"], "retention drops a pin only after the cap releases it")
+        try expect(loaded.allSatisfy(\.isPinned), "the three kept pins stay pinned")
+    }
 }
 
 private func named(_ name: String) -> ClipboardItem {
