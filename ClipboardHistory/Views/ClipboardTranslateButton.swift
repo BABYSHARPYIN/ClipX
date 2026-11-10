@@ -3,12 +3,21 @@ import SwiftUI
 import Translation
 #endif
 
-/// Translate control for a text row. Uses the on-device Translation framework
-/// when the SDK and OS provide it, and shows nothing otherwise.
+/// Translate control for clipboard text and recognized image text.
+/// Uses the on-device Translation framework when the SDK and OS provide it,
+/// and shows nothing otherwise.
 /// On macOS 15 and later, the session is given an explicit Chinese/English
 /// pair so the system language sheet is not shown.
 struct ClipboardTranslateButton: View {
+    enum Style {
+        /// Icon on a history row.
+        case icon
+        /// Bordered label beside the other image-detail actions.
+        case labeled
+    }
+
     let text: String
+    var style: Style = .icon
     @Binding var isVisible: Bool
     @Binding var isWorking: Bool
     @Binding var result: String?
@@ -19,6 +28,7 @@ struct ClipboardTranslateButton: View {
         if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             SystemTranslateButton(
                 text: text,
+                style: style,
                 isVisible: $isVisible,
                 isWorking: $isWorking,
                 result: $result,
@@ -43,9 +53,52 @@ private struct TranslateIconLabel: View {
     }
 }
 
+private struct TranslateLabeledLabel: View {
+    var active: Bool
+    @EnvironmentObject private var locale: LocaleManager
+
+    var body: some View {
+        Label(locale.tr("row.translate"), systemImage: "translate")
+            .font(.system(size: 12))
+            .foregroundColor(active ? Color.accentColor : Color.primary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+    }
+}
+
+private struct TranslateControlChrome: ViewModifier {
+    let style: ClipboardTranslateButton.Style
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch style {
+        case .icon:
+            content.buttonStyle(.plain)
+        case .labeled:
+            content
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+        }
+    }
+}
+
+@ViewBuilder
+private func translateControlLabel(
+    style: ClipboardTranslateButton.Style,
+    active: Bool
+) -> some View {
+    switch style {
+    case .icon:
+        TranslateIconLabel(active: active)
+    case .labeled:
+        TranslateLabeledLabel(active: active)
+    }
+}
+
 #if canImport(Translation)
 private struct SystemTranslateButton: View {
     let text: String
+    let style: ClipboardTranslateButton.Style
     @Binding var isVisible: Bool
     @Binding var isWorking: Bool
     @Binding var result: String?
@@ -56,17 +109,18 @@ private struct SystemTranslateButton: View {
         if #available(macOS 15.0, *) {
             InlineTranslateButton(
                 text: text,
+                style: style,
                 isVisible: $isVisible,
                 isWorking: $isWorking,
                 result: $result,
                 failed: $failed
             )
         } else if #available(macOS 14.4, *) {
-            SystemTranslationPopoverButton(text: text)
+            SystemTranslationPopoverButton(text: text, style: style)
         }
         #else
         if #available(macOS 14.4, *) {
-            SystemTranslationPopoverButton(text: text)
+            SystemTranslationPopoverButton(text: text, style: style)
         }
         #endif
     }
@@ -75,6 +129,7 @@ private struct SystemTranslateButton: View {
 @available(macOS 14.4, *)
 private struct SystemTranslationPopoverButton: View {
     let text: String
+    let style: ClipboardTranslateButton.Style
     @EnvironmentObject private var locale: LocaleManager
     @State private var isPresented = false
 
@@ -82,9 +137,9 @@ private struct SystemTranslationPopoverButton: View {
         Button {
             isPresented = true
         } label: {
-            TranslateIconLabel(active: isPresented)
+            translateControlLabel(style: style, active: isPresented)
         }
-        .buttonStyle(.plain)
+        .modifier(TranslateControlChrome(style: style))
         .help(locale.tr("row.translate"))
         // macOS 14.4's translationPresentation(isPresented:text:) cannot take a
         // source or target. The system identifies the language itself and can
@@ -97,6 +152,7 @@ private struct SystemTranslationPopoverButton: View {
 @available(macOS 15.0, *)
 private struct InlineTranslateButton: View {
     let text: String
+    let style: ClipboardTranslateButton.Style
     @Binding var isVisible: Bool
     @Binding var isWorking: Bool
     @Binding var result: String?
@@ -118,9 +174,9 @@ private struct InlineTranslateButton: View {
             isWorking = true
             beginTranslation()
         } label: {
-            TranslateIconLabel(active: isVisible)
+            translateControlLabel(style: style, active: isVisible)
         }
-        .buttonStyle(.plain)
+        .modifier(TranslateControlChrome(style: style))
         .help(locale.tr("row.translate"))
         .translationTask(configuration) { session in
             guard configuration != nil else { return }

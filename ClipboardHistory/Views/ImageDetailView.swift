@@ -12,6 +12,10 @@ struct ImageDetailView: View {
     @State private var isRecognizing = false
     @State private var errorMessage: String?
     @State private var didCopyImage = false
+    @State private var translationVisible = false
+    @State private var translationWorking = false
+    @State private var translationResult: String?
+    @State private var translationFailed = false
 
     private let storage = StorageManager()
     private let ocr = OCRService.shared
@@ -132,6 +136,9 @@ struct ImageDetailView: View {
                     .padding(.vertical, 20)
             } else if let text = ocrText {
                 textEditor(for: text)
+                if translationVisible {
+                    translationReveal
+                }
                 actionButtons
             } else {
                 Text(locale.tr("detail.ocrNoText"))
@@ -156,9 +163,65 @@ struct ImageDetailView: View {
     private var actionButtons: some View {
         HStack(spacing: 10) {
             speakButton
+            if let text = translatableOCRText {
+                ClipboardTranslateButton(
+                    text: text,
+                    style: .labeled,
+                    isVisible: $translationVisible,
+                    isWorking: $translationWorking,
+                    result: $translationResult,
+                    failed: $translationFailed
+                )
+            }
             copyTextButton
         }
         .padding(.horizontal, 20)
+    }
+
+    /// Same states as a history row: progress, failure, then the translated text.
+    private var translationReveal: some View {
+        Group {
+            if translationWorking && translationResult == nil {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(locale.tr("row.translating"))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else if translationFailed {
+                Text(locale.tr("row.translateFailed"))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if let translationResult {
+                Text(translationResult)
+                    .font(.system(size: 12))
+                    .foregroundColor(.primary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 18)
+    }
+
+    /// Non-empty recognized text on an OS that has the system translate control.
+    private var translatableOCRText: String? {
+        guard translationControlsAvailable else { return nil }
+        guard let text = ocrText?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty
+        else { return nil }
+        return text
+    }
+
+    private var translationControlsAvailable: Bool {
+        #if canImport(Translation)
+        if #available(macOS 14.4, *) {
+            return true
+        }
+        #endif
+        return false
     }
 
     private var speakButton: some View {
@@ -210,6 +273,10 @@ struct ImageDetailView: View {
     }
 
     private func startOCR() {
+        translationVisible = false
+        translationWorking = false
+        translationResult = nil
+        translationFailed = false
         guard let url = resolvedImageURL else {
             errorMessage = locale.tr("detail.ocrNoText")
             return

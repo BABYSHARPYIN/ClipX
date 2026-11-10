@@ -16,6 +16,8 @@ func runTranslationPairChecks() throws {
     try checkRememberedPairRoundTripsAndDropsUnknownValues()
     try checkChosenPairAlwaysNamesBothLanguages()
     try checkMacOS15ButtonSuppliesBothLanguages()
+    try checkImageDetailReusesTranslateControl()
+    try checkPinnedRowsDoNotPaintWindowBackground()
 }
 
 func checkChineseTextTranslatesToEnglish() throws {
@@ -186,12 +188,7 @@ func checkChosenPairAlwaysNamesBothLanguages() throws {
 }
 
 func checkMacOS15ButtonSuppliesBothLanguages() throws {
-    let button = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .appendingPathComponent("ClipboardHistory/Views/ClipboardTranslateButton.swift")
-    let source = try String(contentsOf: button, encoding: .utf8)
+    let source = try sourceFile("ClipboardHistory/Views/ClipboardTranslateButton.swift")
     try expect(
         !source.contains("source: nil"),
         "macOS 15 translation no longer leaves the source language unset"
@@ -208,6 +205,63 @@ func checkMacOS15ButtonSuppliesBothLanguages() throws {
         source.contains("TranslationSession.Configuration(source: source, target: target)"),
         "the session is created with both languages"
     )
+    try expect(
+        source.contains("TranslationPairMemory.save(pair)"),
+        "a successful translation still remembers the pair"
+    )
+}
+
+func checkImageDetailReusesTranslateControl() throws {
+    let source = try sourceFile("ClipboardHistory/Views/ImageDetailView.swift")
+    try expect(
+        source.contains("ClipboardTranslateButton("),
+        "recognized image text uses the shared translate control"
+    )
+    try expect(
+        source.contains("style: .labeled"),
+        "the image detail action uses the labeled translate control"
+    )
+    try expect(
+        !source.contains("TranslationSession"),
+        "image detail does not start its own translation session"
+    )
+    try expect(
+        source.contains("translationResult"),
+        "the translation is shown in the image detail view"
+    )
+    try expect(
+        source.contains("translationControlsAvailable"),
+        "the image translate action keeps the existing OS gate"
+    )
+}
+
+func checkPinnedRowsDoNotPaintWindowBackground() throws {
+    let source = try sourceFile("ClipboardHistory/Views/PopoverContentView.swift")
+    try expect(
+        !source.contains("windowBackgroundColor"),
+        "pinned rows do not paint the opaque window background"
+    )
+    try expect(
+        !source.contains("safeAreaInset"),
+        "pinned rows are not an overlay that needs its own fill"
+    )
+    try expect(
+        source.contains("pinnedItems"),
+        "pinned rows stay in a fixed section"
+    )
+    try expect(
+        source.contains("scrollItems"),
+        "the rest of the history still scrolls"
+    )
+}
+
+private func sourceFile(_ relativePath: String) throws -> String {
+    let url = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent(relativePath)
+    return try String(contentsOf: url, encoding: .utf8)
 }
 
 private func expectPair(
