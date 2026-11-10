@@ -55,9 +55,15 @@
 
 从 [Releases](https://github.com/BABYSHARPYIN/ClipX/releases) 下载最新 DMG。
 
-打开 DMG，将 **ClipX.app** 拖入 **应用程序** 文件夹即可。
+打开 DMG，将 **ClipX.app** 拖入 **应用程序** 文件夹。
 
-> 首次运行时，请在 **系统设置 > 隐私与安全性 > 辅助功能** 中授权 ClipX，否则全局热键无法使用。
+首次使用请在终端执行下面的命令，为应用去掉系统隔离属性（否则可能无法打开）：
+
+```bash
+xattr -cr /Applications/ClipX.app
+```
+
+> 然后在 **系统设置 > 隐私与安全性 > 辅助功能** 中授权 ClipX，否则全局热键无法使用。
 
 ## 构建
 
