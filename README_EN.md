@@ -55,9 +55,15 @@
 
 Download the latest DMG from [Releases](https://github.com/BABYSHARPYIN/ClipX/releases).
 
-Open the DMG, drag **ClipX.app** to your **Applications** folder, and launch it.
+Open the DMG and drag **ClipX.app** to your **Applications** folder.
 
-> When running for the first time, grant **Accessibility** permission in **System Settings > Privacy & Security > Accessibility** so the global hotkey works.
+On first use, run this command in Terminal to clear the app's quarantine attributes (otherwise macOS may refuse to open it):
+
+```bash
+xattr -cr /Applications/ClipX.app
+```
+
+> Then grant **Accessibility** permission in **System Settings > Privacy & Security > Accessibility** so the global hotkey works.
 
 ## Build
 
