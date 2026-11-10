@@ -22,6 +22,7 @@
 		A013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F014 /* Assets.xcassets */; };
 		A014 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F015 /* HotkeySettingsView.swift */; };
 		A015 /* HotkeyStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F016 /* HotkeyStorage.swift */; };
+		A016 /* ClipboardTranslateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F017 /* ClipboardTranslateButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		F014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F015 /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		F016 /* HotkeyStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyStorage.swift; sourceTree = "<group>"; };
+		F017 /* ClipboardTranslateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardTranslateButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +112,7 @@
 			children = (
 				F007 /* PopoverContentView.swift */,
 				F008 /* ClipboardRowView.swift */,
+				F017 /* ClipboardTranslateButton.swift */,
 				F009 /* SearchBarView.swift */,
 				F012 /* AboutView.swift */,
 				F013 /* FeedbackView.swift */,
@@ -199,6 +202,7 @@
 				A006 /* ClipboardViewModel.swift in Sources */,
 				A007 /* PopoverContentView.swift in Sources */,
 				A008 /* ClipboardRowView.swift in Sources */,
+				A016 /* ClipboardTranslateButton.swift in Sources */,
 				A009 /* SearchBarView.swift in Sources */,
 				A011 /* AboutView.swift in Sources */,
 				A012 /* FeedbackView.swift in Sources */,

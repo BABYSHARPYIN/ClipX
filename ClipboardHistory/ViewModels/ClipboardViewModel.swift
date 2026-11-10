@@ -7,6 +7,9 @@ final class ClipboardViewModel: ObservableObject {
     @Published var items: [ClipboardItem] = []
     @Published var searchText: String = ""
     @Published var filterTab: FilterTab = .all
+    @Published var showsPinLimitNotice = false
+
+    private var pinNoticeTask: Task<Void, Never>?
 
     enum FilterTab: String, CaseIterable {
         case all, text, image, video, file
@@ -149,10 +152,31 @@ final class ClipboardViewModel: ObservableObject {
     }
 
     func togglePin(_ id: UUID) {
-        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
-        items[index].isPinned.toggle()
-        storage.saveItems(items)
-        items = storage.loadItems()
+        switch ClipboardItem.togglingPin(id: id, in: items) {
+        case .changed(let updated):
+            guard updated != items else { return }
+            hidePinLimitNotice()
+            storage.saveItems(updated)
+            items = storage.loadItems()
+        case .rejectedAtLimit:
+            showPinLimitNotice()
+        }
+    }
+
+    private func showPinLimitNotice() {
+        showsPinLimitNotice = true
+        pinNoticeTask?.cancel()
+        pinNoticeTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.showsPinLimitNotice = false
+        }
+    }
+
+    private func hidePinLimitNotice() {
+        pinNoticeTask?.cancel()
+        pinNoticeTask = nil
+        showsPinLimitNotice = false
     }
 
     func clearAll() {
