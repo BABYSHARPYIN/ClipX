@@ -1,5 +1,4 @@
 import SwiftUI
-import AppKit
 
 struct PopoverContentView: View {
     @EnvironmentObject var viewModel: ClipboardViewModel
@@ -96,30 +95,29 @@ struct PopoverContentView: View {
     }
 
     private var itemList: some View {
-        ScrollView {
-            if scrollItems.isEmpty {
-                Color.clear.frame(height: 1)
-            } else {
-                LazyVStack(spacing: 0) {
-                    historyRows(scrollItems, showsTrailingDivider: true)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .safeAreaInset(edge: .top, spacing: 0) {
+        VStack(spacing: 0) {
             if !pinnedItems.isEmpty {
                 pinnedLayer
             }
+            ScrollView {
+                if scrollItems.isEmpty {
+                    Color.clear.frame(height: 1)
+                } else {
+                    LazyVStack(spacing: 0) {
+                        historyRows(scrollItems, showsTrailingDivider: true)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Pinned rows stay fixed above the scrolling history and content moves underneath.
+    /// Pinned rows stay fixed above the scrolling history and share its surface.
+    /// A separate opaque fill reads as a white card on the translucent popover.
     private var pinnedLayer: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0) {
-                historyRows(pinnedItems, showsTrailingDivider: false)
-            }
-            .background(Color(nsColor: .windowBackgroundColor))
+            historyRows(pinnedItems, showsTrailingDivider: false)
             Divider()
             LinearGradient(
                 colors: [Color.primary.opacity(0.10), Color.primary.opacity(0)],
@@ -129,7 +127,6 @@ struct PopoverContentView: View {
             .frame(height: 8)
             .allowsHitTesting(false)
         }
-        .zIndex(1)
     }
 
     @ViewBuilder
