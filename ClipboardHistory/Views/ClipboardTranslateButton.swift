@@ -5,6 +5,8 @@ import Translation
 
 /// Translate control for a text row. Uses the on-device Translation framework
 /// when the SDK and OS provide it, and shows nothing otherwise.
+/// On macOS 15 and later, the session is given an explicit Chinese/English
+/// pair so the system language sheet is not shown.
 struct ClipboardTranslateButton: View {
     let text: String
     @Binding var isVisible: Bool
@@ -84,6 +86,9 @@ private struct SystemTranslationPopoverButton: View {
         }
         .buttonStyle(.plain)
         .help(locale.tr("row.translate"))
+        // macOS 14.4's translationPresentation(isPresented:text:) cannot take a
+        // source or target. The system identifies the language itself and can
+        // still show its language sheet. Explicit pairs are macOS 15+.
         .translationPresentation(isPresented: $isPresented, text: text)
     }
 }
@@ -99,6 +104,7 @@ private struct InlineTranslateButton: View {
 
     @EnvironmentObject private var locale: LocaleManager
     @State private var configuration: TranslationSession.Configuration?
+    @State private var activePair: TranslationLanguagePair?
 
     var body: some View {
         Button {
@@ -119,6 +125,7 @@ private struct InlineTranslateButton: View {
         .translationTask(configuration) { session in
             guard configuration != nil else { return }
             let source = text
+            let pair = await MainActor.run { activePair }
             do {
                 let response = try await session.translate(source)
                 let translated = response.targetText.trimmingCharacters(
@@ -131,6 +138,9 @@ private struct InlineTranslateButton: View {
                     } else {
                         result = translated
                         failed = false
+                        if let pair {
+                            TranslationPairMemory.save(pair)
+                        }
                     }
                     isWorking = false
                 }
@@ -145,12 +155,30 @@ private struct InlineTranslateButton: View {
     }
 
     private func beginTranslation() {
+        let pair = TranslationPairResolver.pair(
+            for: text,
+            lastSuccessful: TranslationPairMemory.load()
+        )
+        activePair = pair
+        let source = Self.translationLanguage(for: pair.sourceIdentifier)
+        let target = Self.translationLanguage(for: pair.targetIdentifier)
+        // A new configuration value with the same languages does not rerun the
+        // task, so a retry invalidates the existing one after refreshing them.
         if var config = configuration {
+            config.source = source
+            config.target = target
             config.invalidate()
             configuration = config
         } else {
-            configuration = TranslationSession.Configuration(source: nil, target: nil)
+            configuration = TranslationSession.Configuration(source: source, target: target)
         }
+    }
+
+    private static func translationLanguage(for identifier: String) -> Locale.Language {
+        if identifier == TranslationLanguagePair.simplifiedChineseIdentifier {
+            return Locale.Language(languageCode: .chinese, script: .hanSimplified)
+        }
+        return Locale.Language(languageCode: .english)
     }
 }
 #endif
