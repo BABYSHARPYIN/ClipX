@@ -128,6 +128,7 @@ struct PopoverContentView: View {
             }
             .buttonStyle(.plain)
             .foregroundColor(.secondary)
+            .help(locale.tr("footer.clearAll.help"))
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)

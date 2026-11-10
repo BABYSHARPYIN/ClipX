@@ -1,9 +1,9 @@
 import Foundation
-import AppKit
 
 class StorageManager {
     static let maxItems = 200
     let baseURL: URL
+    let maxItemCount: Int
 
     private var itemsURL: URL {
         baseURL.appendingPathComponent("items.json")
@@ -13,15 +13,20 @@ class StorageManager {
         baseURL.appendingPathComponent("Images")
     }
 
-    init() {
-        let appSupport = FileManager.default.urls(
-            for: .applicationSupportDirectory, in: .userDomainMask
-        ).first!
+    init(baseURL: URL? = nil, maxItemCount: Int = StorageManager.maxItems) {
+        if let baseURL {
+            self.baseURL = baseURL
+        } else {
+            let appSupport = FileManager.default.urls(
+                for: .applicationSupportDirectory, in: .userDomainMask
+            ).first!
 
-        baseURL = appSupport.appendingPathComponent("ClipboardHistory")
+            self.baseURL = appSupport.appendingPathComponent("ClipboardHistory")
+        }
+        self.maxItemCount = maxItemCount
 
         try? FileManager.default.createDirectory(
-            at: baseURL, withIntermediateDirectories: true
+            at: self.baseURL, withIntermediateDirectories: true
         )
         try? FileManager.default.createDirectory(
             at: imagesURL, withIntermediateDirectories: true
@@ -39,22 +44,23 @@ class StorageManager {
     }
 
     func saveItems(_ items: [ClipboardItem]) {
-        let trimmed = Array(items.suffix(StorageManager.maxItems))
+        let trimmed = ClipboardItem.applyingRetentionLimit(items, maxCount: maxItemCount)
         guard let data = try? JSONEncoder().encode(trimmed) else { return }
-        try? data.write(to: itemsURL, options: .atomic)
+        do {
+            try data.write(to: itemsURL, options: .atomic)
+        } catch {
+            return
+        }
+
+        let keptIDs = Set(trimmed.map(\.id))
+        for item in items where item.type == .image && !keptIDs.contains(item.id) {
+            deleteImage(fileName: item.imageFileName ?? "")
+        }
     }
 
     func addItem(_ item: ClipboardItem) {
         var items = loadItems()
         items.append(item)
-
-        if items.count > StorageManager.maxItems {
-            let removed = items.prefix(items.count - StorageManager.maxItems)
-            for r in removed where r.type == .image {
-                deleteImage(fileName: r.imageFileName ?? "")
-            }
-        }
-
         saveItems(items)
     }
 
@@ -75,11 +81,19 @@ class StorageManager {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
+    /// Removes unpinned history. Pinned items and their image files stay.
     func clearAll() {
         let items = loadItems()
-        for item in items where item.type == .image {
+        for item in items where !item.isPinned && item.type == .image {
             deleteImage(fileName: item.imageFileName ?? "")
         }
-        try? FileManager.default.removeItem(at: itemsURL)
+
+        let kept = items.filter(\.isPinned)
+        if kept.isEmpty {
+            try? FileManager.default.removeItem(at: itemsURL)
+            return
+        }
+        guard let data = try? JSONEncoder().encode(kept) else { return }
+        try? data.write(to: itemsURL, options: .atomic)
     }
 }

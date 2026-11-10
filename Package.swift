@@ -19,6 +19,11 @@ let package = Package(
                 .linkedFramework("ServiceManagement"),
                 .linkedFramework("AVFoundation")
             ]
+        ),
+        .testTarget(
+            name: "ClipboardHistoryTests",
+            dependencies: ["ClipboardHistory"],
+            path: "Tests/ClipboardHistoryTests"
         )
     ]
 )
