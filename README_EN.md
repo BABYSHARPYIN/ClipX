@@ -33,6 +33,7 @@
 - **Global hotkey** — press `Cmd+Shift+V` (customizable) to summon from anywhere
 - **Cursor positioning** — popover appears right at your mouse cursor
 - **200-item history** — persisted across restarts
+- **Pin** — keep items you reuse at the top of the list; pinned items stay when history is cleared or trimmed, including after a restart
 - **Multi-language** — English / 中文, follows system language or manual switch
 - **OCR** — recognize text in images, copy selected results
 - **Text-to-speech** — speak clipboard text and OCR results; adjustable rate, pitch, and voice in Settings
@@ -78,6 +79,7 @@ Or open `ClipboardHistory.xcodeproj` in Xcode and hit `⌘R`.
 | Menu bar icon click | Show panel |
 | Right-click menu bar icon | Settings, About, etc. |
 | Click a history item | Copy back to clipboard |
+| Pin icon on an item | Pin / unpin |
 | Search | Type in the search bar |
 | Filter by type | Click the segmented tabs |
 

@@ -68,6 +68,18 @@ struct ClipboardRowView: View {
             .buttonStyle(.plain)
             .help(itemFullText)
 
+            Button {
+                viewModel.togglePin(item.id)
+            } label: {
+                Image(systemName: item.isPinned ? "pin.fill" : "pin")
+                    .font(.system(size: 11))
+                    .foregroundColor(item.isPinned ? .accentColor : .secondary)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(locale.tr(item.isPinned ? "row.unpin" : "row.pin"))
+
             if let text = speakableText {
                 Button {
                     tts.toggle(text)

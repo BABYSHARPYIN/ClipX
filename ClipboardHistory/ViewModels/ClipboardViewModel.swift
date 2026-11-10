@@ -26,25 +26,25 @@ final class ClipboardViewModel: ObservableObject {
     private var monitor: ClipboardMonitor?
 
     var filteredItems: [ClipboardItem] {
-        let reversed = Array(items.reversed())
+        let ordered = ClipboardItem.displayOrder(items)
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let byType: [ClipboardItem] = {
             switch filterTab {
             case .all:
-                return reversed
+                return ordered
             case .text:
-                return reversed.filter { $0.type == .text }
+                return ordered.filter { $0.type == .text }
             case .image:
-                return reversed.filter {
+                return ordered.filter {
                     $0.type == .image || ($0.type == .file && isImageFile($0.fileURL))
                 }
             case .video:
-                return reversed.filter {
+                return ordered.filter {
                     $0.type == .file && isVideoFile($0.fileURL)
                 }
             case .file:
-                return reversed.filter {
+                return ordered.filter {
                     $0.type == .file && !isImageFile($0.fileURL) && !isVideoFile($0.fileURL)
                 }
             }
@@ -90,9 +90,10 @@ final class ClipboardViewModel: ObservableObject {
         monitor?.stop()
     }
 
-    private func handleNewItem(_ item: ClipboardItem, imageData: Data?) {
-        // Remove old duplicate so timestamp updates
-        if let dup = items.first(where: { isSameContent($0, item) }) {
+    private func handleNewItem(_ incoming: ClipboardItem, imageData: Data?) {
+        let item = ClipboardItem.inheritingPin(from: items, newItem: incoming)
+        // Remove old duplicate so timestamp updates. A pin stays with the new copy.
+        if let dup = items.first(where: { $0.matchesContent(of: item) }) {
             if dup.type == .image, let fn = dup.imageFileName {
                 storage.deleteImage(fileName: fn)
             }
@@ -105,22 +106,6 @@ final class ClipboardViewModel: ObservableObject {
         }
         storage.addItem(item)
         items = storage.loadItems()
-    }
-
-    private func isSameContent(_ a: ClipboardItem, _ b: ClipboardItem) -> Bool {
-        guard a.type == b.type else { return false }
-        switch a.type {
-        case .text:
-            return a.textContent == b.textContent
-        case .image:
-            return a.imageFileName == b.imageFileName
-        case .file:
-            return a.fileURL == b.fileURL
-        }
-    }
-
-    private func isDuplicate(_ item: ClipboardItem) -> Bool {
-        items.first { isSameContent($0, item) } != nil
     }
 
     func copyToClipboard(_ item: ClipboardItem) {
@@ -155,22 +140,23 @@ final class ClipboardViewModel: ObservableObject {
         // Skip the monitor's next poll — we just wrote to pasteboard ourselves
         monitor?.skipNextChange()
 
-        // Remove old entry, re-add with fresh timestamp
+        // Remove old entry, re-add with fresh timestamp. Pin and source stay.
         items.removeAll { $0.id == item.id }
-        let refreshed = ClipboardItem(
-            id: item.id, type: item.type,
-            textContent: item.textContent,
-            imageFileName: item.imageFileName,
-            fileURL: item.fileURL,
-            timestamp: Date()
-        )
+        let refreshed = item.recencyCopy()
         storage.saveItems(items)
         storage.addItem(refreshed)
         items = storage.loadItems()
     }
 
+    func togglePin(_ id: UUID) {
+        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        items[index].isPinned.toggle()
+        storage.saveItems(items)
+        items = storage.loadItems()
+    }
+
     func clearAll() {
         storage.clearAll()
-        items = []
+        items = storage.loadItems()
     }
 }
