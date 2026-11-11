@@ -1,6 +1,27 @@
 #!/bin/bash
 set -e
 
+# Default path still builds build/ClipX.app and build/ClipX.dmg, then reveals the DMG.
+# scripts/install.sh passes --no-dmg so agents get the .app without Finder popping open.
+SKIP_DMG=0
+for arg in "$@"; do
+    case "$arg" in
+        --no-dmg)
+            SKIP_DMG=1
+            ;;
+        -h|--help)
+            echo "Usage: scripts/build_app.sh [--no-dmg]"
+            echo "Build build/ClipX.app. Without --no-dmg, also build build/ClipX.dmg and reveal it in Finder."
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg" >&2
+            echo "Usage: scripts/build_app.sh [--no-dmg]" >&2
+            exit 1
+            ;;
+    esac
+done
+
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="ClipX"
 BUNDLE_ID="com.clipx.app"
@@ -51,6 +72,13 @@ swift "$PROJECT_DIR/scripts/set_icon.swift" "$APP_BUNDLE" "$APP_BUNDLE/Contents/
 
 echo "签名..."
 codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null && echo "已签名" || true
+
+if [[ "$SKIP_DMG" -eq 1 ]]; then
+    echo ""
+    echo "=== ✅ 完成（未创建 DMG）==="
+    echo "APP: $APP_BUNDLE"
+    exit 0
+fi
 
 # 创建 DMG
 echo ""

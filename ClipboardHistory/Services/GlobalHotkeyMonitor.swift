@@ -1,6 +1,41 @@
 import Carbon
 import AppKit
 import ApplicationServices
+import Darwin
+
+/// Live Accessibility trust for this signed ClipX binary.
+/// Normal launch writes `accessibility-status` under Application Support
+/// (`trusted` or `not_trusted`). `scripts/install.sh` waits for that file.
+/// `ClipX --accessibility-status` prints the same word and exits 0 or 2,
+/// without showing UI or the system prompt.
+enum AccessibilityTrust {
+    static func exitIfStatusRequested() {
+        guard CommandLine.arguments.contains("--accessibility-status") else { return }
+        let trusted = AXIsProcessTrusted()
+        let line = trusted ? "trusted\n" : "not_trusted\n"
+        _ = line.withCString { bytes in
+            write(STDOUT_FILENO, bytes, strlen(bytes))
+        }
+        Darwin.exit(Int32(trusted ? 0 : 2))
+    }
+
+    /// `~/Library/Application Support/ClipboardHistory/accessibility-status`
+    /// This path is part of the install script contract.
+    static func recordForRunningApp() {
+        let trusted = AXIsProcessTrusted()
+        guard let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first else { return }
+        let directory = appSupport.appendingPathComponent("ClipboardHistory", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let line = trusted ? "trusted\n" : "not_trusted\n"
+        try? line.write(
+            to: directory.appendingPathComponent("accessibility-status"),
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+}
 
 final class GlobalHotkeyMonitor {
     private let onActivate: () -> Void
