@@ -13,6 +13,7 @@
   <a href="#preview">Preview</a> &bull;
   <a href="#download">Download</a> &bull;
   <a href="#build">Build</a> &bull;
+  <a href="#agent-setup">Agent setup</a> &bull;
   <a href="#license">License</a>
   &nbsp;|&nbsp;
   <a href="README.md">中文</a>
@@ -77,6 +78,16 @@ open build/ClipX.app
 Or open `ClipboardHistory.xcodeproj` in Xcode and hit `⌘R`.
 
 **Requirements**: macOS 14+, Xcode 15+, Swift 5.9
+
+## Agent setup
+
+Coding agents should follow [AGENTS.md](AGENTS.md). On macOS:
+
+```bash
+bash scripts/install.sh
+```
+
+The script builds, installs into `/Applications`, clears quarantine, ad-hoc signs, and launches ClipX. Accessibility has to be allowed in System Settings. After that, run `bash scripts/install.sh --check`.
 
 ## Usage
 

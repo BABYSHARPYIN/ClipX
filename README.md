@@ -13,6 +13,7 @@
   <a href="#界面预览">界面预览</a> &bull;
   <a href="#下载">下载</a> &bull;
   <a href="#构建">构建</a> &bull;
+  <a href="#代理安装">代理安装</a> &bull;
   <a href="#许可">许可</a>
   &nbsp;|&nbsp;
   <a href="README_EN.md">English</a>
@@ -77,6 +78,16 @@ open build/ClipX.app
 或在 Xcode 中打开 `ClipboardHistory.xcodeproj`，按 `⌘R` 运行。
 
 **环境要求**：macOS 14+、Xcode 15+、Swift 5.9
+
+## 代理安装
+
+编码代理按 [AGENTS.md](AGENTS.md) 操作。在 macOS 上：
+
+```bash
+bash scripts/install.sh
+```
+
+脚本会编译、安装到 `/Applications`、去掉隔离属性、签名并启动。辅助功能需要在系统设置里手动允许；允许后执行 `bash scripts/install.sh --check`。
 
 ## 使用
 

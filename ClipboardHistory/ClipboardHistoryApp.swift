@@ -24,11 +24,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let locale = LocaleManager()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AccessibilityTrust.exitIfStatusRequested()
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
         setupPopover()
         setupHotkey()
         viewModel.startMonitoring()
+        AccessibilityTrust.recordForRunningApp()
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(restartHotkey),
